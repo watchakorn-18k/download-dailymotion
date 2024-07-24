@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Dailymotion</title>
+    <script src="https://unpkg.com/htmx.org@1.7.0"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body data-theme="dark">
+    <div class="hero bg-base-200 min-h-screen">
+        <div class="hero-content text-center">
+            <div class="flex flex-col gap-4">
+                <h1 class="text-5xl font-bold text-center mb-12">Download Dailymotion</h1>
+                <div>
+                    <input type="text" id="urlInput" name="url" class="input input-bordered input-lg w-full"
+                        placeholder="Enter the video URL" required>
+                </div>
+                <button onclick="fetchVideoInfo()" class="btn btn-neutral md:btn-lg group grow rounded-full px-12"
+                    id="fetchButton">Start</button>
+                <div id="responseContainer" class="flex flex-wrap gap-4">
+                    <!-- Video information will be displayed here -->
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <div class="container mx-auto max-w-md">
+
+    </div>
+
+    <script>
+        let downloadUrl = '';
+
+        function fetchVideoInfo() {
+            const url = document.getElementById('urlInput').value;
+            const fetchButton = document.getElementById('fetchButton');
+            fetchButton.disabled = true;
+            fetch('https://api.v01.savethevideo.com/tasks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    type: 'info',
+                    url: url
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+
+                    const result = data.result[0];
+                    if (result) {
+                        document.getElementById('responseContainer').innerHTML = `
+                        <div class="card bg-base-100 w-96 shadow-xl">
+                            <figure>
+                                <img
+                                src="${result.thumbnail}"
+                                alt="Shoes" />
+                            </figure>
+                            <div class="card-body">
+                                <h2 class="card-title">${result.title}</h2>
+                                <div class="text-left">
+                                    <p><strong>Duration:</strong> ${result.duration_string}</p>
+                                    <p><strong>Resolution:</strong> ${result.resolution}</p>
+                                    <p><strong>View Count:</strong> ${result.view_count}</p>
+                                    <p><strong>Uploader:</strong> ${result.uploader}</p>
+                                </div>
+                                <div class="card-actions justify-end">
+                                <a class="btn btn-success md:btn-lg group grow rounded-full px-12" href="${result.url}">Download Now</a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                        result.formats.map(format => {
+                            document.getElementById('responseContainer').innerHTML += `
+                            <div class="card bg-base-100 w-96 shadow-xl">
+                           <figure>
+                                <img
+                                src="${result.thumbnail}"
+                                alt="Shoes" />
+                            </figure>
+                            <div class="card-body">
+                                <h2 class="card-title">${result.title}</h2>
+                                <div class="text-left">
+                                    <p><strong>Format:</strong> ${format.format}</p>
+                                    <p><strong>Resolution:</strong> ${format.resolution}</p>
+                                </div>
+                                <div class="card-actions justify-end">
+                                <a href="${format.url}" class="btn btn-neutral md:btn-lg group grow rounded-full" target="_blank">Download</a>
+                                </div>
+                            </div>
+                            </div>
+                            `;
+                        })
+                        document.getElementById('responseContainer').classList.remove('hidden');
+
+                        // Store the download URL
+                        downloadUrl = result.url;
+                        // Show the download button
+                    } else {
+                        document.getElementById('responseContainer').innerHTML = '<p class="text-red-500">Failed to fetch video information.</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching video info:', error);
+                    document.getElementById('responseContainer').innerHTML = '<p class="text-red-500">Error fetching video information.</p>';
+                });
+            fetchButton.disabled = false
+        }
+
+        function downloadVideo() {
+            if (downloadUrl) {
+                window.location.href = downloadUrl;
+            }
+        }
+    </script>
+</body>
+
+</html>
